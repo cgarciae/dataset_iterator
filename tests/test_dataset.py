@@ -1,8 +1,9 @@
 from unittest import TestCase
-import numpy as np
-import jax.numpy as jnp
 
-import elegy, optax
+import jax.numpy as jnp
+import numpy as np
+
+import dataset_iterator
 
 
 class DataLoaderTestCase(TestCase):
@@ -10,7 +11,9 @@ class DataLoaderTestCase(TestCase):
         ds = DS0()
         assert len(ds) == 11
 
-        loader = elegy.data.DataLoader(ds, batch_size=4, n_workers=0, shuffle=False)
+        loader = dataset_iterator.DataLoader(
+            ds, batch_size=4, n_workers=0, shuffle=False
+        )
         batches = list(loader)
         assert len(loader) == len(batches) == 3
         assert len(batches[0]) == 2
@@ -28,7 +31,7 @@ class DataLoaderTestCase(TestCase):
 
     def test_multiprocessed(self):
         ds = DS0()
-        loader = elegy.data.DataLoader(ds, batch_size=4, n_workers=4)
+        loader = dataset_iterator.DataLoader(ds, batch_size=4, n_workers=4)
         batches = list(loader)
         assert len(loader) == len(batches) == 3
         assert len(batches[0]) == 2
@@ -45,16 +48,16 @@ class DataLoaderTestCase(TestCase):
         assert batched_x[2].shape == (3, 100, 200, 3)
 
     def test_not_implemented_ds(self):
-        class DS0(elegy.data.Dataset):
+        class DS0(dataset_iterator.Dataset):
             ...
 
-        class DS1(elegy.data.Dataset):
+        class DS1(dataset_iterator.Dataset):
             def __len__(self):
                 return 5
 
         for DS in [DS0, DS1]:
             ds = DS()
-            loader = elegy.data.DataLoader(ds, 10)
+            loader = dataset_iterator.DataLoader(ds, 10)
             try:
                 list(loader)
             except NotImplementedError:
@@ -64,7 +67,9 @@ class DataLoaderTestCase(TestCase):
 
     def test_shuffled(self):
         ds = DS0()
-        loader = elegy.data.DataLoader(ds, batch_size=4, n_workers=4, shuffle=True)
+        loader = dataset_iterator.DataLoader(
+            ds, batch_size=4, n_workers=4, shuffle=True
+        )
         batches0 = list(loader)
         batches1 = list(loader)
 
@@ -82,24 +87,6 @@ class DataLoaderTestCase(TestCase):
             and all(batched_y0[2] == batched_y1[2])
         )
 
-    def test_model_fit(self):
-        ds = DS0()
-        loader_train = elegy.data.DataLoader(ds, batch_size=4, n_workers=4)
-        loader_valid = elegy.data.DataLoader(ds, batch_size=4, n_workers=4)
-
-        class Module(elegy.Module):
-            def call(self, x):
-                x = jnp.mean(x, axis=[1, 2])
-                x = elegy.nn.Linear(20)(x)
-                return x
-
-        model = elegy.Model(
-            Module(),
-            loss=elegy.losses.SparseCategoricalCrossentropy(),
-            optimizer=optax.sgd(0.1),
-        )
-        model.fit(loader_train, validation_data=loader_valid, epochs=3)
-
     def test_multi_item_ds(self):
         # one item
         class DS0:
@@ -109,7 +96,7 @@ class DataLoaderTestCase(TestCase):
             def __getitem__(self, i):
                 return np.zeros([100, 200, 3])
 
-        loader0 = elegy.data.DataLoader(DS0(), batch_size=4)
+        loader0 = dataset_iterator.DataLoader(DS0(), batch_size=4)
         batches0 = list(loader0)
         assert len(batches0) == 3
         assert (
@@ -130,7 +117,7 @@ class DataLoaderTestCase(TestCase):
                     np.zeros([100, 200, 3]),
                 )
 
-        loader1 = elegy.data.DataLoader(DS1(), batch_size=4)
+        loader1 = dataset_iterator.DataLoader(DS1(), batch_size=4)
         batches1 = list(loader1)
         assert len(batches1) == 3
         assert isinstance(batches1[0], tuple)
@@ -144,7 +131,7 @@ class DataLoaderTestCase(TestCase):
     def test_worker_type(self):
         ds = DS0()
         for worker_type in ["thread", "process"]:
-            loader = elegy.data.DataLoader(
+            loader = dataset_iterator.DataLoader(
                 ds, batch_size=4, n_workers=4, worker_type=worker_type
             )
             batches = list(loader)
@@ -152,7 +139,7 @@ class DataLoaderTestCase(TestCase):
     def test_prefetch(self):
         ds = DS0()
 
-        loader = elegy.data.DataLoader(
+        loader = dataset_iterator.DataLoader(
             ds, batch_size=2, n_workers=4, shuffle=False, prefetch=3
         )
         batches = list(loader)
@@ -160,7 +147,7 @@ class DataLoaderTestCase(TestCase):
 
     def test_custom_batch_fn(self):
         ds = DS_custom_batch_fn()
-        loader = elegy.data.DataLoader(ds, batch_size=3)
+        loader = dataset_iterator.DataLoader(ds, batch_size=3)
         batches = list(loader)
         assert len(loader) == len(batches)
         assert batches[0]["a"].shape == (3, 10)
@@ -170,13 +157,13 @@ class DataLoaderTestCase(TestCase):
 
     def test_loader_from_array(self):
         pseudo_ds = np.arange(65)
-        loader = elegy.data.DataLoader(pseudo_ds, batch_size=10)
+        loader = dataset_iterator.DataLoader(pseudo_ds, batch_size=10)
         batches = list(loader)
         assert len(batches) == 7
         assert np.all(batches[1] == np.arange(10, 20))
 
 
-class DS0(elegy.data.Dataset):
+class DS0(dataset_iterator.Dataset):
     def __len__(self):
         return 11
 
@@ -184,7 +171,7 @@ class DS0(elegy.data.Dataset):
         return np.zeros([100, 200, 3]), np.arange(20)[i]
 
 
-class DS_custom_batch_fn(elegy.data.Dataset):
+class DS_custom_batch_fn(dataset_iterator.Dataset):
     def __len__(self):
         return 11
 

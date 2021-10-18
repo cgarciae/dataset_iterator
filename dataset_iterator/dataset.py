@@ -1,11 +1,13 @@
-import numpy as np
-import jax, jax.numpy as jnp
 import multiprocessing.pool
+import os
 import typing as tp
+
+import jax
+import jax.numpy as jnp
+import numpy as np
+
 from .data_adapter import DataAdapter
 from .utils import is_none_or_empty
-import os
-
 
 __all__ = ["Dataset", "DataLoader"]
 
@@ -14,7 +16,7 @@ _example_usage_docstring = """
 
 Example Usage:
 ```
-class MyDataset(elegy.data.Dataset):
+class MyDataset(dataset_iterator.Dataset):
 def __len__(self):
     return 128
 
@@ -23,7 +25,7 @@ def __getitem__(self, i):
     return np.random.random([224, 224, 3]),  np.random.randint(10)
 
 ds     = MyDataset()
-loader = elegy.data.DataLoader(ds, batch_size=8, n_workers=8, worker_type='thread', shuffle=True)
+loader = dataset_iterator.DataLoader(ds, batch_size=8, n_workers=8, worker_type='thread', shuffle=True)
 model.fit(loader, epochs=10)
 ```
 """
@@ -72,7 +74,7 @@ class DataLoader:
         """
         Arguments:
             dataset: The dataset from which to load samples.
-                     A subclass of elegy.data.Dataset or an iterable which implements `__getitem__` and `__len__`.
+                     A subclass of dataset_iterator.Dataset or an iterable which implements `__getitem__` and `__len__`.
             batch_size: A positive integer specifying how many samples a batch should have.
             n_workers: The number of parallel worker threads or processes which load data from the dataset.
                        A value of 0 (default) means to load data from the main thread.
@@ -143,7 +145,7 @@ def default_batch_fn(
 
 def get_batch_fn(ds: tp.Any) -> tp.Callable:
     """Returns either the batch_fn of the argument if it has one, otherwise `default_batch_fn`
-    to allow arrays or datasets that don't inherit from elegy.data.Dataset"""
+    to allow arrays or datasets that don't inherit from dataset_iterator.Dataset"""
     return getattr(ds, "batch_fn", default_batch_fn)
 
 

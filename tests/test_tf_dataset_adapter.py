@@ -4,7 +4,8 @@ from unittest import TestCase
 import jax.numpy as jnp
 import numpy as np
 import tensorflow as tf
-from elegy.data.tf_dataset_adapter import TFDatasetAdapter
+
+from dataset_iterator.tf_dataset_adapter import TFDatasetAdapter
 
 
 class ArrayDataAdapterTest(TestCase):

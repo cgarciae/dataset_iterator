@@ -11,11 +11,14 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import six
-from elegy import types, utils
+
+from dataset_iterator import types
+
+T = tp.TypeVar("T")
 
 
-class Multimap(types.Protocol):
-    def __call__(self, *args: types.np.ndarray) -> types.T:
+class Multimap(tp.Protocol):
+    def __call__(self, *args: np.ndarray) -> tp.Any:
         ...
 
 
@@ -26,8 +29,8 @@ def map_append(output, batch_output):
 
 def map_structure(
     f: Multimap,
-    *structure: tp.Union[types.ArrayHolder, None],
-) -> types.Container[tp.Union[types.T, None]]:
+    *structure: tp.Union[types.Container, None],
+) -> types.Container[tp.Union[T, None]]:
 
     if isinstance(structure[0], tp.Tuple):
         return tuple(map_structure(f, *x) for x in zip(*structure))
@@ -42,21 +45,16 @@ def map_structure(
         return None
 
 
-# TODO: this is exactly jax.tree_leaves???
-def flatten(inputs: types.ArrayHolder) -> tp.Iterable[types.np.ndarray]:
+def flatten(inputs: types.Container) -> tp.Iterable[tp.Any]:
 
-    if isinstance(inputs, (jnp.ndarray, np.ndarray)):
-        yield inputs
-    elif isinstance(inputs, tp.Tuple):
+    if isinstance(inputs, tp.Tuple):
         for x in inputs:
             yield from flatten(x)
     elif isinstance(inputs, tp.Dict):
         for x in inputs.values():
             yield from flatten(x)
-    elif isinstance(inputs, (tp.Generator, tp.Iterator, tp.Iterable)):
-        yield inputs
     else:
-        raise TypeError(f"Unsupported type '{type(inputs)}'")
+        yield inputs
 
 
 def pack_x_y_sample_weight(x, y=None, sample_weight=None):

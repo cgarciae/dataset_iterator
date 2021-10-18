@@ -1,12 +1,11 @@
 import math
 from unittest import TestCase
 
-import numpy as np
 import jax.numpy as jnp
-
+import numpy as np
 import pytest
 
-from elegy.data.list_adapter import ListsOfScalarsDataAdapter
+from dataset_iterator.list_adapter import ListsOfScalarsDataAdapter
 
 
 class ListsOfScalarsDataAdapterTest(TestCase):
