@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "dataset_iterator"
+version = "0.1.0"
+description = ""
+authors = ["Cristian Garcia <cgarcia.e88@gmail.com>"]
+
+[[tool.poetry.source]]
+name = "torch"
+url = "https://eternalphane.github.io/pytorch-pypi/"
+secondary = true
+
+[tool.poetry.dependencies]
+python = ">=3.7,<3.11"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+tensorflow-cpu = "^2.6.0"
+torch = "1.9.1+cpu"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+
